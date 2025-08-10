@@ -6,10 +6,11 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-// --- PASO 1: CONFIGURACIÓN DE EVO PAYMENTS (Según tu correo) ---
+// --- PASO 1: CONFIGURACIÓN DE EVO PAYMENTS ---
 $merchantId = 'TEST1198311'; // Tu ID de Establecimiento (Merchant ID).
-$apiUsername = 'Administrator'; // El ID Operador de tu correo.
-$apiPassword = 'password_025'; // La contraseña de tu correo.
+
+// ¡IMPORTANTE! Esta es la contraseña generada en "Admin" -> "Integration Settings"
+$apiPassword = '1915e67ca347631201dc49fbb1def021'; // Tu "Password 2"
 
 // URL del Gateway
 $gatewayUrl = "https://evopaymentsmexico.gateway.mastercard.com/api/rest/version/72/merchant/{$merchantId}/session";
@@ -29,30 +30,20 @@ $returnUrl = 'https://' . $_SERVER['HTTP_HOST'] . dirname($_SERVER['REQUEST_URI'
 // --- PASO 3: CONSTRUIR LA SOLICITUD PARA LA API ---
 $requestData = [
     'apiOperation' => 'INITIATE_CHECKOUT',
-    'order' => [
-        'id' => $orderId,
-        'amount' => $orderAmount,
-        'currency' => 'MXN',
-        'description' => $orderDescription
-    ],
-    'interaction' => [
-        'operation' => 'PURCHASE',
-        'returnUrl' => $returnUrl,
-        'merchant' => [
-            'name' => 'Politecnico de la Frontera'
-        ]
-    ]
+    'order' => [ 'id' => $orderId, 'amount' => $orderAmount, 'currency' => 'MXN', 'description' => $orderDescription ],
+    'interaction' => [ 'operation' => 'PURCHASE', 'returnUrl' => $returnUrl, 'merchant' => [ 'name' => 'Politecnico de la Frontera' ] ]
 ];
 
 // --- PASO 4: ENVIAR LA SOLICITUD AL GATEWAY (CON AUTENTICACIÓN CORRECTA) ---
 
-// 1. Crear la cadena de autenticación usando el ID Operador y la Contraseña.
-$authString = $apiUsername . ':' . $apiPassword;
+// 1. Crear la cadena de autenticación según la documentación: "merchant.<ID>:<contraseña>"
+// Esta contraseña de integración está asociada directamente con el Merchant ID.
+$authString = 'merchant.' . $merchantId . ':' . $apiPassword;
 
 // 2. Codificar la cadena en Base64
 $base64AuthString = base64_encode($authString);
 
-// 3. Preparar los encabezados HTTP, incluyendo el de Autorización
+// 3. Preparar los encabezados HTTP
 $headers = [
     'Content-Type: application/json',
     'Authorization: Basic ' . $base64AuthString
@@ -63,7 +54,6 @@ curl_setopt($ch, CURLOPT_URL, $gatewayUrl);
 curl_setopt($ch, CURLOPT_POST, 1);
 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($requestData));
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-// 4. Enviar los encabezados correctos
 curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
 $responseJson = curl_exec($ch);
@@ -84,10 +74,8 @@ if (isset($responseData['result']) && $responseData['result'] === 'SUCCESS' && i
     $sessionId = $responseData['session']['id'];
     
     $_SESSION['payment_session'] = [
-        'sessionId' => $sessionId,
-        'orderId' => $orderId,
-        'amount' => $orderAmount,
-        'successIndicator' => $responseData['successIndicator']
+        'sessionId' => $sessionId, 'orderId' => $orderId,
+        'amount' => $orderAmount, 'successIndicator' => $responseData['successIndicator']
     ];
 
     $checkoutUrl = 'https://evopaymentsmexico.gateway.mastercard.com/checkout/entry/' . $sessionId;

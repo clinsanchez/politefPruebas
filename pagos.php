@@ -165,30 +165,39 @@ try {
         }
         .card-container h2 { color: #005A9C; font-weight: 700; }
         .last-update { font-size: 0.9rem; color: #5a6268; text-align: right; margin-bottom: 1.5rem; }
+        
+        /* --- CÓDIGO CSS RESTAURADO --- */
+        .clabe-info-box {
+            background-color: #f0f7ff;
+            border-left: 5px solid #005a9c;
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .clabe-info-box p { margin: 0; font-size: 1rem; color: #333; }
+        .clabe-info-box .clabe-number {
+            font-weight: 600; font-size: 1.2rem; color: #003366;
+            margin-top: 5px; display: block; font-family: monospace;
+        }
+        /* --- FIN DEL CÓDIGO RESTAURADO --- */
+
         .table thead.table-dark th { background-color: #2c3e50; text-align: center; }
         .table tbody td { vertical-align: middle; text-align: center; }
         .table tbody td:nth-child(2) { text-align: left; } /* Concepto a la izquierda */
         .actions-toolbar { display: flex; justify-content: space-between; align-items: center; margin-top: 2.5rem; }
         .footer { text-align: center; padding: 1.8rem 0; background-color: rgba(44, 62, 80, 0.95); color: rgba(255, 255, 255, 0.85); margin-top: auto; }
         
-        /* --- INICIO: CÓDIGO CSS AÑADIDO PARA EL BOTÓN DE PAGO --- */
         .btn-pagar {
-            background-color: #28a745; /* Verde éxito */
-            border-color: #28a745;
-            color: white;
-            font-weight: 500;
-            padding: 0.375rem 0.75rem;
-            border-radius: 20px;
+            background-color: #28a745; border-color: #28a745; color: white;
+            font-weight: 500; padding: 0.375rem 0.75rem; border-radius: 20px;
             transition: all 0.3s ease;
         }
         .btn-pagar:hover {
-            background-color: #218838;
-            border-color: #1e7e34;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 10px rgba(40, 167, 69, 0.25);
+            background-color: #218838; border-color: #1e7e34;
+            transform: translateY(-1px); box-shadow: 0 4px 10px rgba(40, 167, 69, 0.25);
         }
         .btn-pagar .bi { margin-right: 0.4rem; }
-        /* --- FIN: CÓDIGO CSS AÑADIDO --- */
     </style>
 </head>
 <body>
@@ -206,7 +215,12 @@ try {
             <h2 class="text-center mb-3">Pagos Pendientes</h2>
             <p class="last-update"><i class="bi bi-clock-history"></i> Última actualización: <strong><?= htmlspecialchars($ultima_actualizacion) ?></strong></p>
 
-            <!-- Mensaje de CLABE removido para dar paso a pagos con tarjeta -->
+            <!-- BLOQUE DE INFORMACIÓN CLABE RESTAURADO -->
+            <div class="clabe-info-box">
+                <p>Para pagos por transferencia, utilice la siguiente información:</p>
+                <p>Cuenta a nombre de: POLITECNICO DE LA FRONTERA</p>
+                <span class="clabe-number">CLABE: 002164460100681188</span>
+            </div>
 
             <?php
             if (isset($_GET['error'])) {
@@ -222,7 +236,7 @@ try {
                                 <th>Concepto</th>
                                 <th>Importe</th>
                                 <th>Referencia</th>
-                                <th>Acción</th> <!-- NUEVA COLUMNA -->
+                                <th>Acción</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -232,24 +246,17 @@ try {
                                 <td><?= $row['concepto'] ?? 'N/A' ?></td>
                                 <td>$<?= number_format(floatval($row['importe'] ?? 0), 2) ?></td>
                                 <td><?= htmlspecialchars($row['referencia'] ?? 'N/A') ?></td>
-
-                                <!-- ÚNICO CAMBIO: celda Acción usando datos de la fila -->
-                                <td class="text-center">
-                                  <form method="post" action="evo_checkout_start.php" style="display:inline">
-                                    <input type="hidden" name="invoice_id" value="<?= htmlspecialchars($row['referencia'] ?? 'SIN-REF') ?>">
-                                    <input type="hidden" name="amount"
-                                        value="<?= htmlspecialchars(preg_replace('/[^\d.]/', '', (string)($row['importe'] ?? '0'))) ?>">
-                                    <input type="hidden" name="reference"
-                                        value="<?= htmlspecialchars(preg_replace('/[^A-Za-z0-9\-_.]/', '', (string)($row['referencia'] ?? ''))) ?>">
-                                    <input type="hidden" name="student_id" value="<?= htmlspecialchars($student_id) ?>">
-                                    <input type="hidden" name="student_name" value="<?= htmlspecialchars($student_name) ?>">
-                                    <button type="submit" class="btn btn-success btn-sm btn-pagar">
-                                      <i class="bi bi-credit-card-fill"></i> Pagar
-                                    </button>
-                                  </form>
+                                <td>
+                                    <!-- FORMULARIO AJUSTADO -->
+                                    <form action="procesar_pago.php" method="post" style="margin:0;">
+                                        <input type="hidden" name="amount" value="<?= htmlspecialchars($row['importe'] ?? 0) ?>">
+                                        <input type="hidden" name="order_description" value="<?= strip_tags($row['concepto'] ?? 'Pago Politef') ?>">
+                                        <input type="hidden" name="order_reference" value="<?= htmlspecialchars($row['referencia'] ?? '') ?>">
+                                        <button type="submit" class="btn btn-pagar btn-sm">
+                                            <i class="bi bi-credit-card-fill"></i> Pagar con Tarjeta
+                                        </button>
+                                    </form>
                                 </td>
-                                <!-- FIN DEL ÚNICO CAMBIO -->
-
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -262,7 +269,7 @@ try {
             ?>
             <div class="actions-toolbar">
                 <a href="dashboard.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left-circle-fill"></i> Regresar</a>
-                <a href="descargar_pdf.php?id="<?= htmlspecialchars($student_id) ?> class="btn btn-danger" target="_blank"><i class="bi bi-file-earmark-pdf-fill"></i> Descargar Papeleta</a>
+                <a href="descargar_pdf.php?id=<?= htmlspecialchars($student_id) ?>" class="btn btn-danger" target="_blank"><i class="bi bi-file-earmark-pdf-fill"></i> Descargar Papeleta</a>
             </div>
         </div>
     </div>
