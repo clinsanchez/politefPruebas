@@ -1,0 +1,19 @@
+2025-08-10T00:05:13+00:00
+{
+    "apiOperation": "INITIATE_CHECKOUT",
+    "interaction": {
+        "operation": "PURCHASE",
+        "returnUrl": "https:\/\/politef.com\/evo_return.php?invoice_id=68130&order_id=O9177011435292",
+        "cancelUrl": "https:\/\/politef.com\/pagos.php?cancel=1",
+        "merchant": {
+            "name": "Politef"
+        }
+    },
+    "order": {
+        "amount": "0.00",
+        "currency": "MXN",
+        "id": "O9177011435292",
+        "description": "Factura 68130"
+    }
+}
+
